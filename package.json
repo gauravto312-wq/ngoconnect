@@ -1,0 +1,9 @@
+{
+  "name": "ngoconnect",
+  "version": "1.0.0",
+  "description": "NGOConnect Full-Stack Platform",
+  "main": "start.js",
+  "scripts": {
+    "start": "node start.js"
+  }
+}

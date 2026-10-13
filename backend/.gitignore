@@ -1,0 +1,19 @@
+# Maven Build Output
+target/
+
+# Uploaded Media Files
+uploads/*
+!uploads/.gitkeep
+
+# Environment & Secret Files
+.env
+.env.*
+!.env.example
+
+# IDE & Editor Files
+.idea/
+.vscode/
+*.iml
+
+# Log Files
+*.log
