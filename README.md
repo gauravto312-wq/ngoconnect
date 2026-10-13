@@ -69,8 +69,14 @@ Before running the application locally, ensure you have installed:
    | `JWT_SECRET` | 256-bit secret key for JWT signing | `your_jwt_secret_key_minimum_256_bits_long` |
    | `PORT` | Backend server port | `8080` |
    | `FRONTEND_URL` | Allowed CORS origin for frontend | `http://localhost:5173` |
+   | `INITIAL_ADMIN_EMAIL` | Initial admin email (fresh setup only) | `admin@ngoconnect.org` |
+   | `INITIAL_ADMIN_PASSWORD` | Initial admin password (min 8 chars) | `your_secure_admin_password` |
+   | `INITIAL_ADMIN_NAME` | Initial admin name (optional) | `System Administrator` |
+   | `INITIAL_ADMIN_PHONE` | Initial admin phone (optional) | `9999999999` |
    | `VITE_API_BASE_URL` | Frontend REST API base URL | `/api/v1` |
    | `VITE_BACKEND_URL` | Backend server URL for uploads | `http://localhost:8080` |
+
+   > **Note on Administrator Setup**: The application automatically checks if an administrator account exists. If an admin is already present in the database, its password, role, and profile are **never** modified or reset upon startup. For fresh database initializations where no admin exists, configure `INITIAL_ADMIN_EMAIL` and `INITIAL_ADMIN_PASSWORD` in your local environment.
 
 ---
 
