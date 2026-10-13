@@ -1,0 +1,31 @@
+# Build & Output directories
+target/
+*.class
+
+# Environment & Secret files
+.env
+.env.*
+!.env.example
+
+# Local uploads and data
+uploads/*
+!uploads/.gitkeep
+
+# IDEs & System files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs & temp files
+*.log
+*.tmp
+
+# Version control & tooling
+.git/
+.gitignore
+.github/
+
+# Documentation & tests
+*.md
