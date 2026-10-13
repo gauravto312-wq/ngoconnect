@@ -22,6 +22,7 @@ public class FileStorageService {
     private String uploadDirConfig;
 
     private Path resolvedUploadPath;
+    private Path resolvedPrivateDocumentsPath;
 
     @PostConstruct
     public void init() {
@@ -52,8 +53,15 @@ public class FileStorageService {
                 Files.createDirectories(resolvedUploadPath);
             }
             log.info("Physical file storage initialized at: {}", resolvedUploadPath);
+
+            // Private documents directory: isolated outside the public static uploads directory
+            resolvedPrivateDocumentsPath = resolvedUploadPath.resolveSibling("private_documents").toAbsolutePath().normalize();
+            if (!Files.exists(resolvedPrivateDocumentsPath)) {
+                Files.createDirectories(resolvedPrivateDocumentsPath);
+            }
+            log.info("Private documents storage initialized at: {}", resolvedPrivateDocumentsPath);
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to create upload storage directory: " + resolvedUploadPath, e);
+            throw new IllegalStateException("Failed to create storage directory: " + resolvedUploadPath, e);
         }
     }
 
@@ -62,5 +70,12 @@ public class FileStorageService {
             init();
         }
         return resolvedUploadPath;
+    }
+
+    public Path getPrivateDocumentsDirectory() {
+        if (resolvedPrivateDocumentsPath == null) {
+            init();
+        }
+        return resolvedPrivateDocumentsPath;
     }
 }

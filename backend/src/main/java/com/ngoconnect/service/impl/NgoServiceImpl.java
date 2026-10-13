@@ -16,15 +16,34 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.ngoconnect.service.FileStorageService;
+import com.ngoconnect.service.CloudinaryService;
 import com.ngoconnect.service.NotificationService;
+import com.ngoconnect.exception.BadRequestException;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class NgoServiceImpl implements NgoService {
 
     private final NgoRepository ngoRepository;
     private final NgoVerificationRepository ngoVerificationRepository;
     private final NotificationService notificationService;
+    private final FileStorageService fileStorageService;
+    private final CloudinaryService cloudinaryService;
 
     @Override
     @Transactional(readOnly = true)
@@ -157,5 +176,111 @@ public class NgoServiceImpl implements NgoService {
                 .reviewedAt(v.getReviewedAt())
                 .createdAt(v.getCreatedAt())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getVerificationDocumentViewUrl(Long verificationId, Long currentUserId, boolean isAdmin) {
+        NgoVerification verif = ngoVerificationRepository.findById(verificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Verification document not found with id: " + verificationId));
+
+        validateVerificationAccess(verif, currentUserId, isAdmin);
+
+        String docUrl = verif.getDocumentUrl();
+        if (docUrl != null && docUrl.contains("cloudinary.com") && cloudinaryService.isConfigured()) {
+            String signedUrl = cloudinaryService.generateSignedDocumentUrl(docUrl);
+            if (signedUrl != null && !signedUrl.isBlank()) {
+                return signedUrl;
+            }
+            log.warn("Expiring Cloudinary URL generation failed for doc id {}. Using backend streaming endpoint.", verificationId);
+        }
+
+        return "/api/v1/ngos/verification-documents/" + verificationId + "/file";
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> serveVerificationDocumentFile(Long verificationId, Long currentUserId, boolean isAdmin) {
+        NgoVerification verif = ngoVerificationRepository.findById(verificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Verification document not found with id: " + verificationId));
+
+        validateVerificationAccess(verif, currentUserId, isAdmin);
+
+        String docUrl = verif.getDocumentUrl();
+        if (docUrl == null || docUrl.isBlank()) {
+            throw new ResourceNotFoundException("No document file associated with this record.");
+        }
+
+        // 1. Cloudinary hosted
+        if (docUrl.contains("cloudinary.com")) {
+            if (cloudinaryService.isConfigured()) {
+                String signedUrl = cloudinaryService.generateSignedDocumentUrl(docUrl);
+                if (signedUrl != null && !signedUrl.isBlank()) {
+                    return ResponseEntity.status(HttpStatus.FOUND)
+                            .location(URI.create(signedUrl))
+                            .build();
+                }
+            }
+            log.error("Unable to securely deliver Cloudinary document id {}: Cloudinary is unconfigured or signed URL generation failed", verificationId);
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("message", "Secure document storage service is currently unavailable."));
+        }
+
+        // 2. Local filesystem
+        String filename = docUrl.substring(docUrl.lastIndexOf('/') + 1);
+        if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
+            throw new BadRequestException("Invalid document filename.");
+        }
+
+        Path privatePath = fileStorageService.getPrivateDocumentsDirectory().resolve(filename).normalize();
+        Path publicPath = fileStorageService.getUploadDirectory().resolve(filename).normalize();
+
+        Path resolvedFile = null;
+        if (Files.exists(privatePath) && Files.isRegularFile(privatePath) && privatePath.startsWith(fileStorageService.getPrivateDocumentsDirectory())) {
+            resolvedFile = privatePath;
+        } else if (Files.exists(publicPath) && Files.isRegularFile(publicPath) && publicPath.startsWith(fileStorageService.getUploadDirectory())) {
+            resolvedFile = publicPath;
+        }
+
+        if (resolvedFile == null) {
+            throw new ResourceNotFoundException("Document file not found on disk: " + filename);
+        }
+
+        try {
+            Resource resource = new UrlResource(resolvedFile.toUri());
+            if (!resource.exists() || !resource.isReadable()) {
+                throw new ResourceNotFoundException("Document file is unreadable: " + filename);
+            }
+
+            MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
+            String lower = filename.toLowerCase();
+            if (lower.endsWith(".pdf")) {
+                mediaType = MediaType.APPLICATION_PDF;
+            } else if (lower.endsWith(".png")) {
+                mediaType = MediaType.IMAGE_PNG;
+            } else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
+                mediaType = MediaType.IMAGE_JPEG;
+            } else if (lower.endsWith(".webp")) {
+                mediaType = MediaType.parseMediaType("image/webp");
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(mediaType)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                    .body(resource);
+        } catch (MalformedURLException e) {
+            throw new ResourceNotFoundException("Error loading document file: " + filename);
+        }
+    }
+
+    private void validateVerificationAccess(NgoVerification verif, Long currentUserId, boolean isAdmin) {
+        if (isAdmin) {
+            return;
+        }
+        if (verif.getNgo() == null || verif.getNgo().getUser() == null ||
+                !verif.getNgo().getUser().getId().equals(currentUserId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Access denied: You do not have permission to access this verification document.");
+        }
     }
 }

@@ -40,14 +40,40 @@ export const NgoVerification = () => {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const res = await api.post('/upload', formData, {
+      const res = await api.post('/ngos/verification-documents/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setDocumentUrl(res.data.url);
     } catch (err) {
-      alert('Failed to upload document file. Please ensure it is a valid image (JPG, PNG, WEBP) or enter a document URL.');
+      alert('Failed to upload document file. Please ensure it is a valid document (PDF, JPG, PNG, WEBP) under 5MB.');
     } finally {
       setUploadingDoc(false);
+    }
+  };
+
+  const handleViewDocument = async (doc) => {
+    try {
+      const res = await api.get(`/ngos/verification-documents/${doc.id}/view-url`);
+      if (res.data && res.data.url && (res.data.url.startsWith('http://') || res.data.url.startsWith('https://'))) {
+        window.open(res.data.url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+    } catch (err) {
+      console.warn('Could not fetch signed view url, falling back to authenticated blob stream', err);
+    }
+
+    try {
+      const fileRes = await api.get(`/ngos/verification-documents/${doc.id}/file`, {
+        responseType: 'blob'
+      });
+      const contentType = fileRes.headers['content-type'] || 'application/pdf';
+      const blob = new Blob([fileRes.data], { type: contentType });
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 120000);
+    } catch (streamErr) {
+      console.error('Failed to view verification document', streamErr);
+      alert('Unable to load verification document. Please try again.');
     }
   };
 
@@ -131,7 +157,7 @@ export const NgoVerification = () => {
                 <label className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg cursor-pointer inline-flex items-center gap-1.5 transition">
                   <Upload className="w-3.5 h-3.5" />
                   <span>{uploadingDoc ? 'Uploading...' : 'Choose File'}</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleDocFileUpload} disabled={uploadingDoc} />
+                  <input type="file" accept="image/*,application/pdf,.pdf" className="hidden" onChange={handleDocFileUpload} disabled={uploadingDoc} />
                 </label>
                 <input
                   type="text"
@@ -182,15 +208,14 @@ export const NgoVerification = () => {
                   <div className="text-slate-600">Ref: {doc.documentNumber}</div>
                   {doc.documentUrl && (
                     <div className="pt-1">
-                      <a
-                        href={getUploadUrl(doc.documentUrl)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 font-bold underline"
+                      <button
+                        type="button"
+                        onClick={() => handleViewDocument(doc)}
+                        className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 font-bold underline bg-transparent border-none p-0 cursor-pointer text-xs"
                       >
                         <ExternalLink className="w-3 h-3" />
                         <span>View Document</span>
-                      </a>
+                      </button>
                     </div>
                   )}
                   {doc.remarks && <div className="text-indigo-700">Admin Remarks: {doc.remarks}</div>}

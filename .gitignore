@@ -8,11 +8,15 @@ backend/target/
 frontend/dist/
 frontend/dist-ssr/
 
-# Uploaded Media Files
+# Uploaded Media Files & Private Documents
 backend/uploads/*
 !backend/uploads/.gitkeep
 uploads/*
 !uploads/.gitkeep
+backend/private_documents/*
+!backend/private_documents/.gitkeep
+private_documents/*
+!private_documents/.gitkeep
 
 # Local Database Dumps & Backups (Preserves schema & migrations)
 *.dump

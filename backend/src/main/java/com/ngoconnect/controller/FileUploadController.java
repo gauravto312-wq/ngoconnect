@@ -2,8 +2,11 @@ package com.ngoconnect.controller;
 
 import com.ngoconnect.config.UploadRateLimiter;
 import com.ngoconnect.security.UserPrincipal;
+import com.ngoconnect.service.CloudinaryService;
 import com.ngoconnect.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,10 +25,15 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
+@Slf4j
 public class FileUploadController {
 
     private final FileStorageService fileStorageService;
+    private final CloudinaryService cloudinaryService;
     private final UploadRateLimiter rateLimiter;
+
+    @Value("${app.upload.allow-local-fallback:false}")
+    private boolean allowLocalFallback;
 
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(".jpg", ".jpeg", ".png", ".webp");
@@ -79,6 +87,18 @@ public class FileUploadController {
         }
 
         try {
+            if (cloudinaryService.isConfigured()) {
+                String secureUrl = cloudinaryService.uploadImage(file, "public");
+                return ResponseEntity.ok(Map.of("url", secureUrl));
+            }
+
+            if (!allowLocalFallback) {
+                log.error("Cloudinary is not configured and local storage fallback is disabled in this environment.");
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body(Map.of("message", "Persistent media storage is not configured. File uploads are temporarily unavailable."));
+            }
+
+            // Local disk fallback when Cloudinary is not configured (e.g. offline testing)
             Path targetDir = fileStorageService.getUploadDirectory();
             if (!Files.exists(targetDir)) {
                 Files.createDirectories(targetDir);
@@ -97,6 +117,7 @@ public class FileUploadController {
             return ResponseEntity.ok(Map.of("url", fileUrl));
 
         } catch (IOException e) {
+            log.error("Failed to upload file safely: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Failed to upload file safely"));
         }

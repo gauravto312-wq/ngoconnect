@@ -19,8 +19,8 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
-# Create upload directory with non-root ownership
-RUN mkdir -p /app/uploads && chown -R appuser:appgroup /app
+# Create upload and private document directories with non-root ownership
+RUN mkdir -p /app/uploads /app/private_documents && chown -R appuser:appgroup /app
 
 # Copy artifact from builder stage
 COPY --from=builder --chown=appuser:appgroup /build/target/ngoconnect-backend-1.0.0.jar /app/app.jar

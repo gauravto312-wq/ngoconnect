@@ -13,4 +13,6 @@ public interface NgoService {
     NgoVerificationResponse submitVerificationDocument(Long userId, NgoVerificationRequest request);
     List<NgoVerificationResponse> getNgoVerificationDocuments(Long userId);
     void sendPublicInquiry(Long ngoId, String senderName, String senderContact, String messageText);
+    String getVerificationDocumentViewUrl(Long verificationId, Long currentUserId, boolean isAdmin);
+    org.springframework.http.ResponseEntity<?> serveVerificationDocumentFile(Long verificationId, Long currentUserId, boolean isAdmin);
 }

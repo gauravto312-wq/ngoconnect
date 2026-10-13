@@ -42,6 +42,32 @@ export const AdminNgoVerification = () => {
     }
   };
 
+  const handleViewDocument = async (v) => {
+    try {
+      const res = await api.get(`/ngos/verification-documents/${v.id}/view-url`);
+      if (res.data && res.data.url && (res.data.url.startsWith('http://') || res.data.url.startsWith('https://'))) {
+        window.open(res.data.url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+    } catch (err) {
+      console.warn('Could not fetch signed view url, falling back to authenticated blob stream', err);
+    }
+
+    try {
+      const fileRes = await api.get(`/ngos/verification-documents/${v.id}/file`, {
+        responseType: 'blob'
+      });
+      const contentType = fileRes.headers['content-type'] || 'application/pdf';
+      const blob = new Blob([fileRes.data], { type: contentType });
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 120000);
+    } catch (streamErr) {
+      console.error('Failed to view verification document', streamErr);
+      alert('Unable to load verification document. Please try again.');
+    }
+  };
+
   const handleReview = async (verificationId, status) => {
     try {
       await api.post(`/admin/verifications/ngo/${verificationId}/review`, {
@@ -148,14 +174,13 @@ export const AdminNgoVerification = () => {
                     <div><strong>Reg / Certificate Number:</strong> {v.documentNumber}</div>
                     <div className="flex items-center gap-1 text-indigo-700">
                       <ExternalLink className="w-3.5 h-3.5" />
-                      <a
-                        href={getUploadUrl(v.documentUrl)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline font-semibold hover:text-indigo-900"
+                      <button
+                        type="button"
+                        onClick={() => handleViewDocument(v)}
+                        className="underline font-semibold hover:text-indigo-900 bg-transparent border-none p-0 cursor-pointer text-xs text-indigo-700 text-left"
                       >
                         View Uploaded Document ({v.documentUrl})
-                      </a>
+                      </button>
                     </div>
                     <div className="text-slate-400 text-[10px]">Submitted At: {new Date(v.createdAt).toLocaleString()}</div>
                   </div>

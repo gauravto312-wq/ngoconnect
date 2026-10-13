@@ -567,7 +567,7 @@ public class CommunityFoodDrive2Test {
         req.setCity("Lucknow");
         req.setState("Uttar Pradesh");
         req.setEventDate(LocalDate.now());
-        req.setStartTime("06:00 AM");
+        req.setStartTime("12:00 AM");
         req.setEndTime("08:00 PM");
         req.setCompletionDeadline(LocalDateTime.now().plusHours(4));
         FoodDriveResponse created = foodDriveService.createFoodDrive(creatorId, req);
