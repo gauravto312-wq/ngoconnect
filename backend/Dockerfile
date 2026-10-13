@@ -4,11 +4,11 @@ FROM maven:3.9-eclipse-temurin-17-alpine AS builder
 WORKDIR /build
 
 # Cache Maven dependencies
-COPY pom.xml .
+COPY backend/pom.xml .
 RUN mvn dependency:go-offline -B || true
 
 # Copy source code and package executable jar
-COPY src ./src
+COPY backend/src ./src
 RUN mvn clean package -DskipTests -B
 
 # Stage 2: Production JRE runtime

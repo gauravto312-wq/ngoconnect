@@ -4,8 +4,8 @@ services:
   backend:
     container_name: ngoconnect-backend
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: backend/Dockerfile
     image: ngoconnect-backend:1.0.0
     extra_hosts:
       - "host.docker.internal:host-gateway"
