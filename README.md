@@ -14,10 +14,7 @@
 
 ## Live Deployments & Repository Links
 
-- Â **Production Web Application (Vercel)**: [https://ngoconnect-frontend.vercel.app](https://ngoconnect-frontend.vercel.app)
-- Â **Production REST API (Render)**: [https://ngoconnect-m2aq.onrender.com](https://ngoconnect-m2aq.onrender.com)
-- **GitHub Repository**: [https://github.com/gauravto312-wq/ngoconnect](https://github.com/gauravto312-wq/ngoconnect)
-
+- **Production Web Application (Vercel)**: [https://ngoconnect-frontend.vercel.app](https://ngoconnect-frontend.vercel.app)
 ---
 
 ## Table of Contents
@@ -65,14 +62,14 @@ NGOConnect enforces a strict multi-tenant Role-Based Access Control (RBAC) model
 - **Discovery**: Search and explore verified local NGOs and partner restaurants.
 - **In-App Notifications**: Receive real-time alerts with unread badge counters when donations are claimed, scheduled, or delivered.
 
-### Ã°Å¸ÂÂ¢ 2. NGO (Non-Governmental Organization)
+### 2. NGO (Non-Governmental Organization)
 - **Marketplace Claiming**: Claim surplus meals posted by citizens and partner restaurants.
 - **Volunteer Task Dispatch**: Generate delivery assignments with pickup/dropoff checkpoints, delivery instructions, and optional stipends.
 - **Food Drive Orchestration**: Organize public food drives, manage attendee participant rosters, track distribution milestones, and publish post-event evidence photos.
 - **Organization Verification**: Upload official documentation (e.g., 80G, 12A, NGO Darpan, or registration certificates) to secure private storage for administrative review.
 - **Public Profile & Inquiries**: Maintain a public NGO landing page with a photo gallery and receive direct community inquiries.
 
-### Ã°Å¸ÂÂ½Ã¯Â¸Â 3. Restaurant
+### 3. Restaurant
 - **Surplus Food Batches**: Publish large-batch surplus food items with specific pickup timeframes, portion estimates, and handling notes.
 - **Multi-Branch Management**: Register and configure distinct branch locations, each with localized addresses, contact points, and operating hours.
 - **Volunteer Coordination**: Review scheduled volunteer pickups, monitor dispatch timelines, and track historical donations across branches.
@@ -86,7 +83,7 @@ NGOConnect enforces a strict multi-tenant Role-Based Access Control (RBAC) model
 - **Activity & Earnings Tracking**: Monitor delivery run histories, completed task milestones, and accumulated stipend balances.
 - **Event Participation**: Sign up to assist on-ground operations during community food drives.
 
-### Â 5. Administrator
+### 5. Administrator
 - **Verification Audit**: Review pending legal credentials from NGOs and restaurants, with capabilities to approve, reject, or request revisions alongside audit remarks.
 - **Secure Document Inspection**: Access confidential verification files using short-lived (5-minute) cryptographically signed Cloudinary URLs.
 - **User Account Management**: Activate or suspend citizen, volunteer, NGO, or restaurant accounts across the platform.
